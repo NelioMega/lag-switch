@@ -50,6 +50,12 @@ public sealed class Settings
 
     public CutDirection Direction { get; set; } = CutDirection.Both;
 
+    /// <summary>
+    /// WFP par defaut : il bloque meme pare-feu eteint, atteint le trafic de bouclage, bascule
+    /// en ~0,3 ms au lieu de ~30 ms, et ses filtres s'effacent seuls si l'application est tuee.
+    /// </summary>
+    public BlockBackend Backend { get; set; } = BlockBackend.Wfp;
+
     /// <summary>Chemin complet de l'executable vise quand <see cref="Target"/> vaut Application.</summary>
     public string? ApplicationPath { get; set; }
 

@@ -33,8 +33,20 @@ public sealed record FirewallHealth(bool? Domain, bool? Private, bool? Public, i
 /// Tous les appels COM sont serialises sur un thread STA dedie : l'API du pare-feu n'aime pas
 /// etre appelee depuis plusieurs threads, et cela garde le thread d'interface libre.
 /// </summary>
-public sealed class FirewallEngine : IDisposable
+public sealed class FirewallEngine : IBlockBackend
 {
+    public string Name => "Pare-feu Windows";
+
+    /// <summary>Les regles ne bloquent rien si le service Pare-feu est eteint.</summary>
+    public bool NeedsWindowsFirewall => true;
+
+    /// <summary>Lu au nettoyage : faut-il rendre au pare-feu l'etat ou on l'a trouve.</summary>
+    public bool RestoreFirewallStateOnExit { get; set; } = true;
+
+    public Task CleanupAsync() => CleanupAsync(RestoreFirewallStateOnExit);
+
+    public void CleanupBlocking(TimeSpan timeout) => CleanupBlocking(RestoreFirewallStateOnExit, timeout);
+
     /// <summary>Prefixe de nom qui identifie nos regles, y compris celles laissees par un plantage.</summary>
     public const string RulePrefix = "LagSwitch";
 

@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
 using LagSwitch.Core;
+using LagSwitch.Core.Wfp;
 
 namespace LagSwitch;
 
@@ -8,11 +9,20 @@ public partial class App : Application
 {
     private Mutex? _singleInstance;
     private int _shutdownDone;
+    private WfpBackend? _wfp;
 
     public static new App Current => (App)Application.Current;
 
     public Settings Settings { get; private set; } = new();
+
+    /// <summary>
+    /// Toujours instancie, meme quand le blocage passe par WFP : c'est lui qui lit l'etat du
+    /// pare-feu et qui balaie d'eventuelles regles laissees par une session precedente.
+    /// </summary>
     public FirewallEngine Firewall { get; private set; } = null!;
+
+    public IBlockBackend Backend { get; private set; } = null!;
+
     public CutEngine Cut { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -33,14 +43,29 @@ public partial class App : Application
         base.OnStartup(e);
 
         Settings = SettingsStore.Load();
-        Firewall = new FirewallEngine();
-        Cut = new CutEngine(Firewall);
 
-        // Une instance precedente a pu mourir en laissant ses regles actives : on balaie.
+        Firewall = new FirewallEngine { RestoreFirewallStateOnExit = Settings.RestoreFirewallOnExit };
+        _wfp = new WfpBackend();
+        Backend = Settings.Backend == BlockBackend.Wfp ? _wfp : Firewall;
+        Cut = new CutEngine(Backend);
+
+        // Une instance precedente a pu mourir en laissant ses regles de pare-feu actives.
+        // Les filtres WFP, eux, sont deja partis avec leur session.
         _ = Firewall.CleanupAsync(restoreFirewallState: false);
 
         DispatcherUnhandledException += OnUnhandledException;
         AppDomain.CurrentDomain.ProcessExit += (_, _) => Teardown();
+    }
+
+    /// <summary>Change de mecanisme de blocage sans redemarrer, en nettoyant le precedent.</summary>
+    public async Task UseBackendAsync(BlockBackend which)
+    {
+        Cut.PanicRestore();
+        try { await Backend.CleanupAsync(); } catch { }
+
+        Backend = which == BlockBackend.Wfp ? _wfp! : Firewall;
+        Cut.Backend = Backend;
+        Settings.Backend = which;
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -69,7 +94,12 @@ public partial class App : Application
 
         try { Cut?.PanicRestore(); } catch { }
         try { Cut?.Dispose(); } catch { }
-        try { Firewall?.CleanupBlocking(Settings.RestoreFirewallOnExit, TimeSpan.FromSeconds(5)); } catch { }
+
+        if (Firewall is not null) Firewall.RestoreFirewallStateOnExit = Settings.RestoreFirewallOnExit;
+        try { _wfp?.CleanupBlocking(TimeSpan.FromSeconds(2)); } catch { }
+        try { Firewall?.CleanupBlocking(TimeSpan.FromSeconds(5)); } catch { }
+
+        try { _wfp?.Dispose(); } catch { }
         try { Firewall?.Dispose(); } catch { }
         try { SettingsStore.Save(Settings); } catch { }
         try { _singleInstance?.Dispose(); } catch { }

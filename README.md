@@ -35,10 +35,11 @@ Windows le lui retire, donc mieux vaut éviter une touche utilisée en jeu.
 
 Un instrument de test qui ment est pire qu'un instrument absent. Deux mécanismes s'en assurent.
 
-**Il refuse de couper quand il ne peut pas.** Si le pare-feu Windows est éteint sur le profil
-en cours, basculer les règles réussit parfaitement et ne bloque rien. Dans ce cas LagSwitch
-affiche `[ INACTIF ]`, désactive le bouton et ignore le raccourci, au lieu d'annoncer une
-coupure imaginaire.
+**Il refuse de couper quand il ne peut pas.** Deux façons de ne pas pouvoir : le moteur n'a pas
+réussi à s'armer, ou c'est le moteur pare-feu et le pare-feu Windows est éteint — auquel cas
+basculer les règles réussit parfaitement et ne bloque rien. Dans les deux cas LagSwitch affiche
+`[ INACTIF ]`, désactive le bouton, ignore le raccourci et dit laquelle des deux raisons
+s'applique, au lieu d'annoncer une coupure imaginaire.
 
 **Il mesure au lieu de supposer.** Une sonde interroge un hôte toutes les 700 ms et affiche le
 RTT réel. Si l'état annoncé est « coupé » alors que le trafic répond encore, elle le dit en
@@ -70,17 +71,36 @@ Une application qui coupe le réseau doit être incapable de le laisser coupé.
   supprime les règles orphelines dès son lancement.
 - **Instance unique.** Deux LagSwitch partageraient le même jeu de règles ; le second refuse de démarrer.
 
+## Les deux moteurs
+
+Le blocage peut passer par deux mécanismes, interchangeables à chaud.
+
+**WFP** *(par défaut)* pose ses filtres directement dans la plateforme de filtrage Windows, la
+couche sur laquelle le pare-feu Windows est lui-même bâti. Mesuré sur une machine dont le
+pare-feu est éteint sur les trois profils :
+
+| | |
+|---|---|
+| Bascule | **0,3 ms** |
+| Pare-feu Windows éteint | bloque quand même |
+| Trafic de bouclage (`127.0.0.1`) | **bloqué** — donc les tests locaux dans Studio |
+| LagSwitch tué au gestionnaire des tâches | les filtres partent avec la session |
+
+La contrepartie est une limite mesurée : en cible **par application**, WFP filtre TCP et UDP
+mais pas ICMP, que les couches ALE ne portent pas. Un `ping` de l'application visée passera
+donc encore. En cible globale, ICMP est bloqué comme le reste.
+
+**Pare-feu Windows** pose deux règles de blocage et bascule leur booléen `Enabled`. Plus lent
+(~30 ms), sans effet sur le bouclage, et il exige que le service Pare-feu soit **actif** : s'il
+est éteint sur le profil en cours, les règles existent sans rien bloquer. L'application le
+détecte, l'affiche et propose de l'activer — avec une case pour le remettre comme avant en
+quittant. Activer le pare-feu remet aussi Windows à refuser les connexions entrantes non
+sollicitées, ce qui peut gêner un serveur local, une VM ou un partage réseau.
+
 ## Ce qu'il faut savoir avant
 
-**Il faut les droits administrateur.** Écrire dans la base de règles du pare-feu Windows en
-exige ; le manifeste demande donc l'élévation au lancement.
-
-**Le pare-feu Windows doit être actif.** LagSwitch bloque en posant des règles de blocage :
-si le pare-feu est éteint sur le profil en cours, les règles existent mais ne s'appliquent
-pas. L'application le détecte, l'affiche, et propose de l'activer — avec une case pour le
-remettre comme avant en quittant. Activer le pare-feu remet aussi Windows à refuser les
-connexions entrantes non sollicitées, ce qui peut gêner un serveur local, une VM ou un
-partage réseau.
+**Il faut les droits administrateur.** Poser des filtres WFP comme écrire dans la base de
+règles du pare-feu en exigent ; le manifeste demande donc l'élévation au lancement.
 
 **Ce n'est pas un outil pour tricher.** Couper sa connexion dans un jeu en ligne compétitif
 pour se rendre intouchable, c'est de la triche, et ça se solde par un bannissement. L'outil
@@ -146,6 +166,11 @@ du texte mangé dans la release, sans la moindre erreur de compilation.
 ```
 src/LagSwitch/
 ├── Core/
+│   ├── Wfp/
+│   │   ├── WfpNative.cs    interop WFP : structures, unions, GUID de couches
+│   │   ├── WfpEngine.cs    session dynamique, sous-calque, filtres de blocage
+│   │   └── WfpBackend.cs   habillage au contrat commun
+│   ├── IBlockBackend.cs    le contrat que les deux moteurs remplissent
 │   ├── FirewallEngine.cs   règles de blocage, sens, état du pare-feu, thread COM dédié
 │   ├── CutEngine.cs        automate des motifs de coupure et garde-fous
 │   ├── LinkProbe.cs        mesure de l'état réel du lien

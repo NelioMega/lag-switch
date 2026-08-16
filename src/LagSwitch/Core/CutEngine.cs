@@ -12,14 +12,21 @@ namespace LagSwitch.Core;
 /// </summary>
 public sealed class CutEngine : IDisposable
 {
-    private readonly FirewallEngine _firewall;
     private readonly object _gate = new();
+    private IBlockBackend _backend;
+
+    /// <summary>Le mecanisme de blocage, remplacable a chaud.</summary>
+    public IBlockBackend Backend
+    {
+        get { lock (_gate) return _backend; }
+        set { lock (_gate) _backend = value; }
+    }
 
     private Thread? _worker;
     private CancellationTokenSource? _cancel;
     private bool _blocked;
 
-    public CutEngine(FirewallEngine firewall) => _firewall = firewall;
+    public CutEngine(IBlockBackend backend) => _backend = backend;
 
     /// <summary>Sens du trafic vise. Tenu a jour par l'interface, lu a chaque bascule.</summary>
     public CutDirection Direction { get; set; } = CutDirection.Both;
@@ -122,7 +129,7 @@ public sealed class CutEngine : IDisposable
         }
 
         worker?.Join(TimeSpan.FromSeconds(2));
-        _firewall.SetBlocked(false, Direction);
+        _backend.SetBlocked(false, Direction);
         SetBlockedFlag(false);
     }
 
@@ -188,7 +195,7 @@ public sealed class CutEngine : IDisposable
     private void Block(bool blocked)
     {
         if (IsBlocked == blocked) return;
-        _firewall.SetBlocked(blocked, Direction);
+        _backend.SetBlocked(blocked, Direction);
         SetBlockedFlag(blocked);
     }
 

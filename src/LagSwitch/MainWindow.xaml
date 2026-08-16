@@ -127,8 +127,26 @@
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="14,0,8,0" Padding="0,0,6,0">
                     <StackPanel>
 
-                        <!-- ===== pare-feu : sans lui, rien ne bloque. En tete de liste. -->
+                        <!-- ===== moteur -->
                         <Border Style="{StaticResource CardPanel}">
+                            <StackPanel>
+                                <TextBlock Text="// MOTEUR DE BLOCAGE" Style="{StaticResource CardTitle}" />
+                                <Rectangle Style="{StaticResource Rule}" />
+
+                                <RadioButton x:Name="BackendWfpRadio" GroupName="Backend" Checked="OnBackendChanged"
+                                             Content="WFP        sous le pare-feu, ~0,3 ms par bascule" />
+                                <RadioButton x:Name="BackendFwRadio" GroupName="Backend" Checked="OnBackendChanged"
+                                             Content="pare-feu   regles Windows, ~30 ms, exige le pare-feu actif" />
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="26,10,0,0"
+                                           Text="WFP pose ses filtres dans la couche sur laquelle le pare-feu Windows est lui-meme bati. Il bloque meme pare-feu eteint, atteint le trafic de bouclage - donc les tests locaux dans Studio - et sa session est dynamique : les filtres disparaissent seuls si LagSwitch est tue." />
+                                <TextBlock Style="{StaticResource Hint}" Margin="26,8,0,0"
+                                           Text="Limite mesuree : en cible par application, WFP filtre TCP et UDP mais pas ICMP, que les couches ALE ne portent pas. Un ping de la cible passera donc encore." />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===== pare-feu : sans lui, le moteur pare-feu ne bloque rien -->
+                        <Border x:Name="FirewallCard" Style="{StaticResource CardPanel}">
                             <StackPanel>
                                 <TextBlock Text="// PARE-FEU WINDOWS" Style="{StaticResource CardTitle}" />
                                 <Rectangle Style="{StaticResource Rule}" />

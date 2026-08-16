@@ -17,6 +17,9 @@ public partial class MainWindow : Window
     private readonly Settings _settings = App.Current.Settings;
     private readonly FirewallEngine _firewall = App.Current.Firewall;
     private readonly CutEngine _cut = App.Current.Cut;
+
+    /// <summary>Le mecanisme de blocage en vigueur : WFP ou regles de pare-feu.</summary>
+    private IBlockBackend Backend => App.Current.Backend;
     private readonly HotkeyService _hotkeys = new();
     private readonly ObservableCollection<string> _log = new();
     private readonly DispatcherTimer _ticker = new() { Interval = TimeSpan.FromMilliseconds(100) };
@@ -32,11 +35,15 @@ public partial class MainWindow : Window
     private string? _armedPath;
 
     /// <summary>
-    /// Faux quand le pare-feu est eteint sur le profil en cours. Dans ce cas les regles se
-    /// basculent tres bien et ne bloquent rien : l'application doit refuser de couper plutot
-    /// que d'afficher un etat qu'elle n'a pas.
+    /// Vrai seulement si une coupure aurait REELLEMENT lieu. Deux facons de ne pas l'avoir :
+    /// le moteur n'a pas reussi a s'armer, ou c'est le moteur a base de regles et le pare-feu
+    /// Windows est eteint. Dans les deux cas l'application refuse de couper plutot que
+    /// d'afficher un etat qu'elle n'a pas.
     /// </summary>
     private bool _canBlock;
+
+    /// <summary>Le pare-feu Windows protege-t-il le profil en cours.</summary>
+    private bool _firewallOk;
 
     private bool _loading = true;
     private bool _capturingHotkey;
@@ -84,6 +91,7 @@ public partial class MainWindow : Window
         RefreshTargetUi();
         RefreshState(false);
         RefreshRunning(false);
+        RefreshBlockAvailability(); // rien n'est arme encore : le bouton part desactive
 
         ApplyComfortSettings();
 
@@ -146,6 +154,9 @@ public partial class MainWindow : Window
         ModeHoldRadio.IsChecked = _settings.Mode == CutMode.Hold;
         ModeFlickerRadio.IsChecked = _settings.Mode == CutMode.Flicker;
 
+        BackendWfpRadio.IsChecked = _settings.Backend == BlockBackend.Wfp;
+        BackendFwRadio.IsChecked = _settings.Backend == BlockBackend.Firewall;
+
         DirBothRadio.IsChecked = _settings.Direction == CutDirection.Both;
         DirOutRadio.IsChecked = _settings.Direction == CutDirection.Outbound;
         DirInRadio.IsChecked = _settings.Direction == CutDirection.Inbound;
@@ -160,6 +171,20 @@ public partial class MainWindow : Window
         OverlayCheck.IsChecked = _settings.ShowOverlay;
         SoundCheck.IsChecked = _settings.PlaySounds;
         ProbeCheck.IsChecked = _settings.ProbeEnabled;
+    }
+
+    private async void OnBackendChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+
+        var wanted = BackendFwRadio.IsChecked == true ? BlockBackend.Firewall : BlockBackend.Wfp;
+        if (wanted == _settings.Backend) return;
+
+        await App.Current.UseBackendAsync(wanted);
+        Append($"Moteur : {Backend.Name}.");
+
+        await RearmAsync();
+        await RefreshFirewallStateAsync();
     }
 
     private void OnDirectionChanged(object sender, RoutedEventArgs e)
@@ -234,8 +259,15 @@ public partial class MainWindow : Window
     /// Sans pare-feu actif, basculer les regles ne bloque rien. Plutot que d'afficher une
     /// coupure imaginaire, l'application se declare INACTIVE et refuse de couper.
     /// </summary>
+    /// <summary>
+    /// Recalcule si une coupure aurait vraiment lieu, et met toute l'interface en accord.
+    /// A rappeler apres chaque armement et chaque relecture de l'etat du pare-feu.
+    /// </summary>
     private void RefreshBlockAvailability()
     {
+        var firewallBlocks = Backend.NeedsWindowsFirewall && !_firewallOk;
+        _canBlock = Backend.IsArmed && !firewallBlocks;
+
         CutButton.IsEnabled = _canBlock;
 
         if (_canBlock)
@@ -250,7 +282,9 @@ public partial class MainWindow : Window
         StateText.Effect = null;
         Caret.Foreground = warn;
         StateDot.Fill = warn;
-        StateDetail.Text = "impossible de bloquer // pare-feu Windows eteint sur le profil en cours";
+        StateDetail.Text = firewallBlocks
+            ? "impossible de bloquer // moteur pare-feu choisi, mais le pare-feu Windows est eteint"
+            : $"impossible de bloquer // {Backend.Name} n'a pas pu s'armer, voir le journal";
         _overlay?.SetState("Warn", "INACTIF");
     }
 
@@ -288,17 +322,14 @@ public partial class MainWindow : Window
 
     private void RefreshStateDetail()
     {
-        if (!_canBlock)
-        {
-            StateDetail.Text = "impossible de bloquer // pare-feu Windows eteint sur le profil en cours";
-            return;
-        }
+        // Quand rien ne peut etre bloque, c'est RefreshBlockAvailability qui redige le message.
+        if (!_canBlock) return;
 
         if (!_cut.IsRunning)
         {
-            StateDetail.Text = _firewall.IsArmed
-                ? $"regles armees // raccourci {HotkeyService.Describe(_settings.HotkeyModifiers, _settings.HotkeyVirtualKey)}"
-                : "regles non posees // verifie la cible";
+            StateDetail.Text = Backend.IsArmed
+                ? $"{Backend.Name} arme // raccourci {HotkeyService.Describe(_settings.HotkeyModifiers, _settings.HotkeyVirtualKey)}"
+                : "non arme // verifie la cible";
             return;
         }
 
@@ -417,13 +448,13 @@ public partial class MainWindow : Window
         if (_settings.Target == TargetKind.Application && string.IsNullOrWhiteSpace(path))
         {
             Append("Choisis une application avant de couper.");
-            RefreshStateDetail();
+            RefreshBlockAvailability();
             return;
         }
 
         try
         {
-            await _firewall.ArmAsync(_settings.Target, path);
+            await Backend.ArmAsync(_settings.Target, path);
             _armedPath = path;
 
             if (_settings.Target == TargetKind.Application)
@@ -451,7 +482,7 @@ public partial class MainWindow : Window
                 MessageBoxImage.Warning);
         }
 
-        RefreshStateDetail();
+        RefreshBlockAvailability();
     }
 
     /// <summary>
@@ -608,7 +639,9 @@ public partial class MainWindow : Window
     {
         if (!_canBlock)
         {
-            Append("Raccourci ignore : pare-feu eteint, la coupure n'aurait aucun effet.");
+            Append(Backend.NeedsWindowsFirewall && !_firewallOk
+                ? "Raccourci ignore : pare-feu eteint, la coupure n'aurait aucun effet."
+                : $"Raccourci ignore : {Backend.Name} n'est pas arme, la coupure n'aurait aucun effet.");
             return;
         }
 
@@ -692,8 +725,11 @@ public partial class MainWindow : Window
 
     private async void OnRecheckFirewall(object sender, RoutedEventArgs e) => await RefreshFirewallStateAsync();
 
-    private void OnRestoreFirewallChanged(object sender, RoutedEventArgs e) =>
+    private void OnRestoreFirewallChanged(object sender, RoutedEventArgs e)
+    {
         _settings.RestoreFirewallOnExit = RestoreFirewallCheck.IsChecked == true;
+        _firewall.RestoreFirewallStateOnExit = _settings.RestoreFirewallOnExit;
+    }
 
     private async void OnEnableFirewall(object sender, RoutedEventArgs e)
     {
@@ -729,7 +765,8 @@ public partial class MainWindow : Window
         FirewallFixPanel.Visibility = needsFix ? Visibility.Visible : Visibility.Collapsed;
         RestoreFirewallCheck.IsChecked = _settings.RestoreFirewallOnExit;
 
-        _canBlock = protectedNow is true;
+        _firewallOk = protectedNow is true;
+        FirewallCard.Visibility = Backend.NeedsWindowsFirewall ? Visibility.Visible : Visibility.Collapsed;
         RefreshBlockAvailability();
 
         static string Describe(bool? state) => state switch
