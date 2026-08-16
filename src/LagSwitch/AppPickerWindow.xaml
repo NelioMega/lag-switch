@@ -1,40 +1,73 @@
-<Window x:Class="LagSwitch.AppPickerWindow"
+﻿<Window x:Class="LagSwitch.AppPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Choisir une application"
-        Height="470" Width="480"
+        Height="490" Width="500"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Icon="Assets/lagswitch.ico"
+        Background="Transparent"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False"
-        Background="{StaticResource Background}">
+        ShowInTaskbar="False">
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="32"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
 
-        <TextBlock Grid.Row="0"
-                   Style="{StaticResource Hint}"
-                   Margin="0,0,0,10"
-                   Text="Applications actuellement ouvertes avec une fenetre. Seul leur trafic sera coupe." />
+    <Border Background="{StaticResource Background}"
+            BorderBrush="{StaticResource CardBorderLit}"
+            BorderThickness="1">
+        <Grid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="32" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-        <TextBox x:Name="SearchBox"
-                 Grid.Row="1"
-                 Style="{StaticResource SearchBox}"
-                 Margin="0,0,0,10"
-                 TextChanged="OnSearchChanged" />
+                <Grid Grid.Row="0" Background="{StaticResource Card}">
+                    <TextBlock Text="// APPLICATIONS OUVERTES" Style="{StaticResource CardTitle}"
+                               Margin="12,0,0,0" VerticalAlignment="Center" />
+                    <Button Content="X" Style="{StaticResource ChromeButton}"
+                            HorizontalAlignment="Right" IsCancel="True"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+                    <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{StaticResource CardBorder}" />
+                </Grid>
 
-        <ListBox x:Name="AppList"
-                 Grid.Row="2"
-                 Style="{StaticResource PickerList}"
-                 MouseDoubleClick="OnConfirm" />
+                <TextBlock Grid.Row="1"
+                           Style="{StaticResource Hint}"
+                           Margin="14,14,14,10"
+                           Text="Seules les applications avec une fenetre sont listees. Seul le trafic de celle choisie sera coupe." />
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Rafraichir" Style="{StaticResource BaseButton}" Margin="0,0,8,0" Click="OnRefresh" />
-            <Button Content="Annuler" Style="{StaticResource BaseButton}" Margin="0,0,8,0" IsCancel="True" />
-            <Button Content="Choisir" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="OnConfirm" />
-        </StackPanel>
-    </Grid>
+                <TextBox x:Name="SearchBox"
+                         Grid.Row="2"
+                         Style="{StaticResource SearchBox}"
+                         Margin="14,0,14,10"
+                         TextChanged="OnSearchChanged" />
+
+                <ListBox x:Name="AppList"
+                         Grid.Row="3"
+                         Style="{StaticResource PickerList}"
+                         Margin="14,0,14,0"
+                         MouseDoubleClick="OnConfirm" />
+
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="14">
+                    <Button Content="RAFRAICHIR" Style="{StaticResource BaseButton}" Margin="0,0,8,0" Click="OnRefresh" />
+                    <Button Content="ANNULER" Style="{StaticResource BaseButton}" Margin="0,0,8,0" IsCancel="True" />
+                    <Button Content="CHOISIR" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="OnConfirm" />
+                </StackPanel>
+            </Grid>
+
+            <Rectangle Fill="{StaticResource Scanlines}" IsHitTestVisible="False" />
+        </Grid>
+    </Border>
 </Window>

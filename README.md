@@ -1,3 +1,5 @@
+<img src="docs/logo.png" width="120" alt="LagSwitch" />
+
 # LagSwitch
 
 Un simulateur de conditions réseau pour Windows. Il coupe et rétablit la connexion à la
@@ -97,6 +99,16 @@ maintien, un fil interroge `GetAsyncKeyState` toutes les 10 ms jusqu'au relâche
 
 **Les réglages sont locaux.** `%AppData%\LagSwitch\settings.json`. Pas de compte, pas de serveur.
 
+**L'interface est un terminal.** Tout est en chasse fixe, les cases à cocher sont dessinées en
+ASCII (`[ ]` / `[x]`), la barre de titre est redessinée via `WindowChrome`, et un très léger
+grain de balayage passe par-dessus. La palette sort du logo : noir, gris ardoise, rouge d'alerte
+— plus un vert de terminal, seule couleur ajoutée, parce que « la ligne est là » doit se lire
+sans lire.
+
+**Les sources portent un BOM UTF-8.** Sans lui, un `.cs` non-ASCII compilé sur un runner GitHub
+Actions — dont la page de code par défaut n'est pas celle d'une machine française — sort avec
+du texte mangé dans la release, sans la moindre erreur de compilation.
+
 ## Structure
 
 ```
@@ -108,7 +120,8 @@ src/LagSwitch/
 │   ├── TargetCatalog.cs    liste des applications ouvertes
 │   ├── Settings.cs         réglages et persistance JSON
 │   └── Native.cs           les quelques appels Win32
+├── Assets/                logo pixel et icône multi-tailles
 ├── MainWindow             état, cible, mode, raccourci, garde-fous, journal
 ├── AppPickerWindow        choix de l'application à couper
-└── Styles.xaml            palette, cartes, boutons, champs
+└── Styles.xaml            palette, cartes, boutons ASCII, grain d'écran
 ```

@@ -13,8 +13,15 @@
     <Product>LagSwitch</Product>
     <Company>NelioMega</Company>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\lagswitch.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- L'icone sert deux fois : au .exe via ApplicationIcon, et aux fenetres via Window.Icon. -->
+    <Resource Include="Assets\lagswitch.ico" />
+    <Resource Include="Assets\logo.png" />
+  </ItemGroup>
 
 </Project>

@@ -1,9 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using LagSwitch.Core;
 using Microsoft.Win32;
@@ -52,6 +54,9 @@ public partial class MainWindow : Window
     {
         _hotkeys.Attach(this);
 
+        VersionText.Text = "v" + (System.Reflection.Assembly.GetExecutingAssembly()
+            .GetName().Version?.ToString(3) ?? "1.0.0");
+
         LoadSettingsIntoUi();
         _loading = false;
 
@@ -94,12 +99,28 @@ public partial class MainWindow : Window
 
     private void RefreshState(bool blocked)
     {
-        StateText.Text = blocked ? "COUPE" : "EN LIGNE";
-        var brush = (System.Windows.Media.Brush)FindResource(blocked ? "Cut" : "Online");
+        StateText.Text = blocked ? "[ COUPE ]" : "[ EN LIGNE ]";
+
+        var brush = (SolidColorBrush)FindResource(blocked ? "Cut" : "Online");
         StateText.Foreground = brush;
+        Caret.Foreground = brush;
         StateDot.Fill = brush;
+
+        // La lueur rend la coupure lisible du coin de l'oeil, sans regarder le texte.
+        StateText.Effect = new DropShadowEffect
+        {
+            Color = brush.Color,
+            BlurRadius = blocked ? 18 : 10,
+            ShadowDepth = 0,
+            Opacity = blocked ? 0.8 : 0.45,
+        };
+
         RefreshStateDetail();
     }
+
+    private void OnMinimize(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void OnCloseWindow(object sender, RoutedEventArgs e) => Close();
 
     private void RefreshRunning(bool running)
     {
@@ -118,9 +139,11 @@ public partial class MainWindow : Window
         {
             CutMode.Burst => "IMPULSION",
             CutMode.Hold => "MAINTENIR",
-            CutMode.Flicker => running ? "ARRETER" : "LANCER",
+            CutMode.Flicker => running ? "STOP" : "LANCER",
             _ => running ? "RETABLIR" : "COUPER",
         };
+
+        CutButton.Foreground = (SolidColorBrush)FindResource(running ? "Cut" : "Text");
 
         RefreshStateDetail();
     }
@@ -130,19 +153,19 @@ public partial class MainWindow : Window
         if (!_cut.IsRunning)
         {
             StateDetail.Text = _firewall.IsArmed
-                ? $"Pret. Raccourci : {HotkeyService.Describe(_settings.HotkeyModifiers, _settings.HotkeyVirtualKey)}"
-                : "Regles non posees : verifie la cible.";
+                ? $"regles armees // raccourci {HotkeyService.Describe(_settings.HotkeyModifiers, _settings.HotkeyVirtualKey)}"
+                : "regles non posees // verifie la cible";
             return;
         }
 
         var elapsed = _sinceStart.Elapsed.TotalSeconds;
         var remaining = Math.Max(0, _settings.MaxCutSeconds - elapsed);
-        StateDetail.Text = $"{elapsed:0.0} s ecoulees — retour automatique dans {remaining:0.0} s";
+        StateDetail.Text = $"t+{elapsed:0.0}s // retour automatique dans {remaining:0.0}s";
     }
 
     private void Append(string line)
     {
-        _log.Insert(0, $"{DateTime.Now:HH:mm:ss.fff}  {line}");
+        _log.Insert(0, $"[{DateTime.Now:HH:mm:ss.fff}] > {line}");
         while (_log.Count > 200) _log.RemoveAt(_log.Count - 1);
     }
 
