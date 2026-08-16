@@ -21,6 +21,9 @@ public sealed class CutEngine : IDisposable
 
     public CutEngine(FirewallEngine firewall) => _firewall = firewall;
 
+    /// <summary>Sens du trafic vise. Tenu a jour par l'interface, lu a chaque bascule.</summary>
+    public CutDirection Direction { get; set; } = CutDirection.Both;
+
     /// <summary>Vrai quand la connexion est coupee a l'instant present.</summary>
     public bool IsBlocked
     {
@@ -119,7 +122,7 @@ public sealed class CutEngine : IDisposable
         }
 
         worker?.Join(TimeSpan.FromSeconds(2));
-        _firewall.SetBlocked(false);
+        _firewall.SetBlocked(false, Direction);
         SetBlockedFlag(false);
     }
 
@@ -185,7 +188,7 @@ public sealed class CutEngine : IDisposable
     private void Block(bool blocked)
     {
         if (IsBlocked == blocked) return;
-        _firewall.SetBlocked(blocked);
+        _firewall.SetBlocked(blocked, Direction);
         SetBlockedFlag(blocked);
     }
 

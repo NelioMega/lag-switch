@@ -109,6 +109,8 @@
                             </StackPanel>
                             <TextBlock x:Name="StateDetail" Style="{StaticResource Hint}" Margin="20,6,0,0"
                                        Text="initialisation..." />
+                            <TextBlock x:Name="ProbeText" Style="{StaticResource Hint}" Margin="20,3,0,0"
+                                       Text="sonde // demarrage" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -182,8 +184,30 @@
                                             Style="{StaticResource BaseButton}" Click="OnBrowse" />
                                 </Grid>
 
+                                <StackPanel Orientation="Horizontal" Margin="26,8,0,0">
+                                    <Button x:Name="RobloxButton" Content="ROBLOX" Style="{StaticResource BaseButton}"
+                                            Padding="9,5" FontSize="11" Margin="0,0,8,0"
+                                            Tag="RobloxPlayerBeta" Click="OnWellKnownTarget" />
+                                    <Button x:Name="StudioButton" Content="STUDIO" Style="{StaticResource BaseButton}"
+                                            Padding="9,5" FontSize="11"
+                                            Tag="RobloxStudioBeta" Click="OnWellKnownTarget" />
+                                </StackPanel>
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="26,10,0,0"
+                                           Text="Cibler une seule application evite de couper le reste de la machine (chat vocal, navigateur, Studio). Le nom de processus fait foi : le chemin est reresolu a chaque fois, une mise a jour du jeu ne casse donc pas la regle." />
+
+                                <Rectangle Style="{StaticResource Rule}" Margin="0,14,0,12" />
+                                <TextBlock Text="// SENS" Style="{StaticResource CardTitle}" />
+
+                                <RadioButton x:Name="DirBothRadio" GroupName="Direction" Checked="OnDirectionChanged"
+                                             Content="les deux sens    la machine disparait du reseau" />
+                                <RadioButton x:Name="DirOutRadio" GroupName="Direction" Checked="OnDirectionChanged"
+                                             Content="montant seul     le serveur cesse de t'entendre, tu continues de le voir" />
+                                <RadioButton x:Name="DirInRadio" GroupName="Direction" Checked="OnDirectionChanged"
+                                             Content="descendant seul  tu emets encore, tu ne recois plus rien" />
+
                                 <TextBlock Style="{StaticResource Hint}" Margin="26,8,0,0"
-                                           Text="Cibler une seule application evite de couper le reste de la machine (chat vocal, navigateur, Studio)." />
+                                           Text="Le montant seul est le plus revelateur sur des physiques a autorite client : c'est lui qui produit les rubber-bands et les teleportations." />
                             </StackPanel>
                         </Border>
 
@@ -278,6 +302,24 @@
 
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0"
                                            Text="Les regles sont aussi retirees a la fermeture, en cas d'erreur, et au demarrage suivant si l'application a ete tuee." />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===== confort -->
+                        <Border Style="{StaticResource CardPanel}">
+                            <StackPanel>
+                                <TextBlock Text="// RETOUR EN JEU" Style="{StaticResource CardTitle}" />
+                                <Rectangle Style="{StaticResource Rule}" />
+
+                                <CheckBox x:Name="OverlayCheck" Content="pastille toujours au-dessus"
+                                          Click="OnComfortChanged" />
+                                <CheckBox x:Name="SoundCheck" Content="bip a la coupure et au retour"
+                                          Click="OnComfortChanged" />
+                                <CheckBox x:Name="ProbeCheck" Content="sonde reseau (verifie que la coupure a bien lieu)"
+                                          Click="OnComfortChanged" />
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="26,8,0,0"
+                                           Text="Un jeu en plein ecran exclusif masquera la pastille : c'est une limite de Windows. En fenetre sans bordure, elle s'affiche." />
                             </StackPanel>
                         </Border>
 

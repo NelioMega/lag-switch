@@ -27,5 +27,18 @@ internal static class Native
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int vKey);
 
+    // Styles etendus, pour une pastille qui ne prend jamais le focus et laisse
+    // passer les clics : sinon elle volerait la souris au jeu.
+    public const int GWL_EXSTYLE = -20;
+    public const int WS_EX_TRANSPARENT = 0x00000020;
+    public const int WS_EX_TOOLWINDOW = 0x00000080;
+    public const int WS_EX_NOACTIVATE = 0x08000000;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
     public static bool IsKeyDown(uint vk) => (GetAsyncKeyState((int)vk) & 0x8000) != 0;
 }

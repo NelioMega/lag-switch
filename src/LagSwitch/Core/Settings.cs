@@ -14,6 +14,19 @@ public enum TargetKind
     Application,
 }
 
+/// <summary>Quel sens du trafic la coupure vise.</summary>
+public enum CutDirection
+{
+    /// <summary>Montant et descendant : la machine disparait du reseau.</summary>
+    Both,
+
+    /// <summary>Montant seul : le serveur cesse de t'entendre, mais tu continues de le voir.</summary>
+    Outbound,
+
+    /// <summary>Descendant seul : tu continues d'emettre, mais tu ne recois plus rien.</summary>
+    Inbound,
+}
+
 /// <summary>Comment le raccourci declenche la coupure.</summary>
 public enum CutMode
 {
@@ -35,8 +48,27 @@ public sealed class Settings
     public CutMode Mode { get; set; } = CutMode.Toggle;
     public TargetKind Target { get; set; } = TargetKind.AllTraffic;
 
+    public CutDirection Direction { get; set; } = CutDirection.Both;
+
     /// <summary>Chemin complet de l'executable vise quand <see cref="Target"/> vaut Application.</summary>
     public string? ApplicationPath { get; set; }
+
+    /// <summary>
+    /// Nom du processus vise, sans extension. C'est LUI qui fait autorite : le chemin d'un jeu
+    /// change a chaque mise a jour (Roblox vit dans un dossier version-&lt;hash&gt;), donc une regle
+    /// clouee sur un chemin fige cesse de bloquer quoi que ce soit, sans rien dire.
+    /// </summary>
+    public string? ApplicationProcessName { get; set; }
+
+    /// <summary>Hote interroge par la sonde pour constater l'etat reel du lien.</summary>
+    public string ProbeHost { get; set; } = "1.1.1.1";
+
+    public bool ProbeEnabled { get; set; } = true;
+
+    /// <summary>Pastille toujours au-dessus, pour voir l'etat sans quitter le plein ecran.</summary>
+    public bool ShowOverlay { get; set; } = true;
+
+    public bool PlaySounds { get; set; } = true;
 
     /// <summary>Code de touche virtuelle du raccourci. F8 par defaut.</summary>
     public uint HotkeyVirtualKey { get; set; } = 0x77;

@@ -21,10 +21,42 @@ Un seul `.exe`, rien à installer, aucun pilote.
 
 La **cible** se choisit dans l'application : soit tout le trafic de la machine, soit le trafic
 d'un seul exécutable. Le second est presque toujours le bon choix — on teste son jeu sans
-couper le chat vocal, le navigateur et le reste.
+couper le chat vocal, le navigateur et le reste. Roblox et Roblox Studio ont un bouton dédié.
+
+Le **sens** se choisit aussi : les deux, montant seul, ou descendant seul. Le montant seul est
+le plus révélateur sur une physique à autorité client — le serveur cesse de t'entendre pendant
+que ton client continue de voir le monde avancer, et c'est exactement ce qui produit les
+rubber-bands et les téléportations.
 
 Le raccourci est global : il fonctionne quand le jeu est au premier plan. En contrepartie
 Windows le lui retire, donc mieux vaut éviter une touche utilisée en jeu.
+
+## L'honnêteté de l'affichage
+
+Un instrument de test qui ment est pire qu'un instrument absent. Deux mécanismes s'en assurent.
+
+**Il refuse de couper quand il ne peut pas.** Si le pare-feu Windows est éteint sur le profil
+en cours, basculer les règles réussit parfaitement et ne bloque rien. Dans ce cas LagSwitch
+affiche `[ INACTIF ]`, désactive le bouton et ignore le raccourci, au lieu d'annoncer une
+coupure imaginaire.
+
+**Il mesure au lieu de supposer.** Une sonde interroge un hôte toutes les 700 ms et affiche le
+RTT réel. Si l'état annoncé est « coupé » alors que le trafic répond encore, elle le dit en
+rouge. Elle est honnête sur ses propres limites : en cible par application, elle mesure le
+trafic de LagSwitch et pas celui de la cible, et elle le signale ; si l'hôte n'a jamais
+répondu, elle prévient que son silence ne prouve rien.
+
+**La cible suit son processus.** C'est le nom du processus qui fait foi, pas le chemin : Roblox
+vit dans un dossier `version-<hash>` qui change à chaque mise à jour, et une règle clouée sur
+l'ancien chemin resterait en place sans plus rien bloquer. Le chemin est re-résolu à
+l'armement et surveillé toutes les 3 secondes.
+
+## Le retour en jeu
+
+Une pastille toujours au-dessus affiche l'état sans quitter le plein écran — elle n'accepte ni
+le focus ni les clics, donc elle ne vole jamais la souris au jeu. Un jeu en plein écran
+*exclusif* la masquera quand même : c'est une limite de Windows. Deux bips synthétisés, une
+chute pour la coupure et une montée pour le retour, doublent l'information à l'oreille.
 
 ## Les garde-fous
 
@@ -114,14 +146,17 @@ du texte mangé dans la release, sans la moindre erreur de compilation.
 ```
 src/LagSwitch/
 ├── Core/
-│   ├── FirewallEngine.cs   règles de blocage, état du pare-feu, thread COM dédié
+│   ├── FirewallEngine.cs   règles de blocage, sens, état du pare-feu, thread COM dédié
 │   ├── CutEngine.cs        automate des motifs de coupure et garde-fous
+│   ├── LinkProbe.cs        mesure de l'état réel du lien
 │   ├── HotkeyService.cs    raccourci global, détection du relâchement
-│   ├── TargetCatalog.cs    liste des applications ouvertes
+│   ├── TargetCatalog.cs    résolution des cibles par nom de processus
+│   ├── Tone.cs             les deux bips, calculés au démarrage
 │   ├── Settings.cs         réglages et persistance JSON
 │   └── Native.cs           les quelques appels Win32
 ├── Assets/                logo pixel et icône multi-tailles
-├── MainWindow             état, cible, mode, raccourci, garde-fous, journal
+├── MainWindow             état, cible, sens, mode, raccourci, garde-fous, journal
+├── OverlayWindow          pastille d'état, sans focus ni clics
 ├── AppPickerWindow        choix de l'application à couper
 └── Styles.xaml            palette, cartes, boutons ASCII, grain d'écran
 ```

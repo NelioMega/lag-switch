@@ -241,18 +241,21 @@ public sealed class FirewallEngine : IDisposable
         return Policy.Rules.Item(name);
     }
 
-    /// <summary>Coupe (true) ou retablit (false). C'est le chemin chaud : deux ecritures COM.</summary>
-    public Task SetBlockedAsync(bool blocked) => OnPump(() =>
+    /// <summary>
+    /// Coupe (true) ou retablit (false). C'est le chemin chaud : deux ecritures COM.
+    /// Les deux regles etant deja separees, choisir un sens ne coute rien de plus.
+    /// </summary>
+    public Task SetBlockedAsync(bool blocked, CutDirection direction) => OnPump(() =>
     {
         if (_outboundRule is null || _inboundRule is null) return;
-        _outboundRule.Enabled = blocked;
-        _inboundRule.Enabled = blocked;
+        _outboundRule.Enabled = blocked && direction is CutDirection.Both or CutDirection.Outbound;
+        _inboundRule.Enabled = blocked && direction is CutDirection.Both or CutDirection.Inbound;
     });
 
     /// <summary>Version synchrone, pour le fil qui joue les motifs de coupure.</summary>
-    public void SetBlocked(bool blocked)
+    public void SetBlocked(bool blocked, CutDirection direction)
     {
-        try { SetBlockedAsync(blocked).GetAwaiter().GetResult(); }
+        try { SetBlockedAsync(blocked, direction).GetAwaiter().GetResult(); }
         catch { /* la restauration finale et le nettoyage de sortie rattrapent */ }
     }
 

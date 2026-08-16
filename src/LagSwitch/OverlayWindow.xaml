@@ -1,0 +1,32 @@
+﻿<Window x:Class="LagSwitch.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LagSwitch"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowActivated="False"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        Focusable="False"
+        IsHitTestVisible="False"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <Border x:Name="Shell"
+            Background="#E604060A"
+            BorderBrush="{StaticResource Online}"
+            BorderThickness="1"
+            Padding="12,6">
+        <StackPanel Orientation="Horizontal">
+            <Rectangle x:Name="Dot" Width="8" Height="8" VerticalAlignment="Center"
+                       Fill="{StaticResource Online}" />
+            <TextBlock x:Name="Label" Text="EN LIGNE" Margin="8,0,0,0"
+                       FontFamily="{StaticResource TerminalFont}"
+                       FontSize="12" FontWeight="Bold"
+                       Foreground="{StaticResource Online}" VerticalAlignment="Center" />
+        </StackPanel>
+    </Border>
+</Window>
