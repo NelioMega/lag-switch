@@ -1,0 +1,60 @@
+name: release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Deduire la version du tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Version : $version"
+
+      # Autonome : .NET embarque, tourne sur une machine sans rien d'installe.
+      - name: Publier la version autonome
+        run: >
+          dotnet publish src/LagSwitch/LagSwitch.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:Version=${{ steps.version.outputs.value }}
+          -o publish/autonome
+
+      # Legere : exige le runtime .NET 8 Desktop sur la machine cible.
+      - name: Publier la version legere
+        run: >
+          dotnet publish src/LagSwitch/LagSwitch.csproj -c Release -r win-x64
+          --self-contained false
+          -p:PublishSingleFile=true
+          -p:Version=${{ steps.version.outputs.value }}
+          -o publish/leger
+
+      - name: Empaqueter
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.value }}"
+          Compress-Archive -Path publish/autonome/* -DestinationPath "LagSwitch-$v-win-x64-autonome.zip"
+          Compress-Archive -Path publish/leger/*    -DestinationPath "LagSwitch-$v-win-x64.zip"
+
+      - name: Publier la release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LagSwitch ${{ steps.version.outputs.value }}
+          generate_release_notes: true
+          files: |
+            LagSwitch-*.zip
