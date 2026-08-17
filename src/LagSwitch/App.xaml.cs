@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
 using LagSwitch.Core;
+using LagSwitch.Core.Theming;
 using LagSwitch.Core.Wfp;
 
 namespace LagSwitch;
@@ -43,6 +44,9 @@ public partial class App : Application
         base.OnStartup(e);
 
         Settings = SettingsStore.Load();
+
+        // Avant toute fenetre : les styles resolvent la palette au chargement.
+        ThemeService.Install(Resources, Settings.ThemeName);
 
         Firewall = new FirewallEngine { RestoreFirewallStateOnExit = Settings.RestoreFirewallOnExit };
         _wfp = new WfpBackend();

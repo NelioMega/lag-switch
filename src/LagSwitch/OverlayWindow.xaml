@@ -16,17 +16,17 @@
         UseLayoutRounding="True">
 
     <Border x:Name="Shell"
-            Background="#E604060A"
-            BorderBrush="{StaticResource Online}"
+            Background="{DynamicResource OverlayFace}"
+            BorderBrush="{DynamicResource Online}"
             BorderThickness="1"
             Padding="12,6">
         <StackPanel Orientation="Horizontal">
             <Rectangle x:Name="Dot" Width="8" Height="8" VerticalAlignment="Center"
-                       Fill="{StaticResource Online}" />
+                       Fill="{DynamicResource Online}" />
             <TextBlock x:Name="Label" Text="EN LIGNE" Margin="8,0,0,0"
                        FontFamily="{StaticResource TerminalFont}"
                        FontSize="12" FontWeight="Bold"
-                       Foreground="{StaticResource Online}" VerticalAlignment="Center" />
+                       Foreground="{DynamicResource Online}" VerticalAlignment="Center" />
         </StackPanel>
     </Border>
 </Window>

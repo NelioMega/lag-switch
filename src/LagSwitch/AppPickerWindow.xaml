@@ -21,8 +21,8 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource Background}"
-            BorderBrush="{StaticResource CardBorderLit}"
+    <Border Background="{DynamicResource Background}"
+            BorderBrush="{DynamicResource CardBorderLit}"
             BorderThickness="1">
         <Grid>
             <Grid>
@@ -34,13 +34,13 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0" Background="{StaticResource Card}">
+                <Grid Grid.Row="0" Background="{DynamicResource Card}">
                     <TextBlock Text="// APPLICATIONS OUVERTES" Style="{StaticResource CardTitle}"
                                Margin="12,0,0,0" VerticalAlignment="Center" />
                     <Button Content="X" Style="{StaticResource ChromeButton}"
                             HorizontalAlignment="Right" IsCancel="True"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
-                    <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{StaticResource CardBorder}" />
+                    <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource CardBorder}" />
                 </Grid>
 
                 <TextBlock Grid.Row="1"
@@ -67,7 +67,8 @@
                 </StackPanel>
             </Grid>
 
-            <Rectangle Fill="{StaticResource Scanlines}" IsHitTestVisible="False" />
+            <Rectangle Fill="{StaticResource Scanlines}" IsHitTestVisible="False"
+                       Opacity="{DynamicResource GrainOpacity}" />
         </Grid>
     </Border>
 </Window>

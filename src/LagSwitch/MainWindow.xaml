@@ -21,8 +21,8 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource Background}"
-            BorderBrush="{StaticResource CardBorderLit}"
+    <Border Background="{DynamicResource Background}"
+            BorderBrush="{DynamicResource CardBorderLit}"
             BorderThickness="1">
         <Border.Style>
             <Style TargetType="Border">
@@ -47,7 +47,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- ===== barre de titre -->
-                <Grid Grid.Row="0" Background="{StaticResource Card}">
+                <Grid Grid.Row="0" Background="{DynamicResource Card}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -69,7 +69,7 @@
                     </StackPanel>
 
                     <Rectangle Grid.ColumnSpan="3" Height="1" VerticalAlignment="Bottom"
-                               Fill="{StaticResource CardBorder}" />
+                               Fill="{DynamicResource CardBorder}" />
                 </Grid>
 
                 <!-- ===== etat + action -->
@@ -83,15 +83,15 @@
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <Rectangle x:Name="StateDot" Width="10" Height="10"
-                                           VerticalAlignment="Center" Fill="{StaticResource Online}" />
+                                           VerticalAlignment="Center" Fill="{DynamicResource Online}" />
                                 <TextBlock x:Name="StateText" Text="[ EN LIGNE ]" Margin="10,0,0,0"
                                            FontFamily="{StaticResource TerminalFont}"
                                            FontSize="21" FontWeight="Bold"
-                                           Foreground="{StaticResource Online}" VerticalAlignment="Center" />
+                                           Foreground="{DynamicResource Online}" VerticalAlignment="Center" />
                                 <TextBlock x:Name="Caret" Text="_" Margin="3,0,0,0"
                                            FontFamily="{StaticResource TerminalFont}"
                                            FontSize="21" FontWeight="Bold"
-                                           Foreground="{StaticResource Online}" VerticalAlignment="Center">
+                                           Foreground="{DynamicResource Online}" VerticalAlignment="Center">
                                     <TextBlock.Triggers>
                                         <EventTrigger RoutedEvent="Loaded">
                                             <BeginStoryboard>
@@ -126,6 +126,16 @@
                 <!-- ===== reglages -->
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="14,0,8,0" Padding="0,0,6,0">
                     <StackPanel>
+
+                        <!-- ===== theme -->
+                        <Border Style="{StaticResource CardPanel}">
+                            <StackPanel>
+                                <TextBlock Text="// THEME" Style="{StaticResource CardTitle}" />
+                                <Rectangle Style="{StaticResource Rule}" />
+                                <WrapPanel x:Name="ThemeButtons" />
+                                <TextBlock x:Name="ThemeTagline" Style="{StaticResource Hint}" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </Border>
 
                         <!-- ===== moteur -->
                         <Border Style="{StaticResource CardPanel}">
@@ -188,8 +198,8 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Grid.Column="0" Background="{StaticResource Field}"
-                                            BorderBrush="{StaticResource CardBorder}" BorderThickness="1"
+                                    <Border Grid.Column="0" Background="{DynamicResource Field}"
+                                            BorderBrush="{DynamicResource CardBorder}" BorderThickness="1"
                                             Padding="9,6" Margin="0,0,8,0">
                                         <TextBlock x:Name="TargetPathText" Style="{StaticResource Mono}"
                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
@@ -367,8 +377,10 @@
                 </Border>
             </Grid>
 
-            <!-- Grain d'ecran, purement decoratif : jamais dans le chemin des clics. -->
-            <Rectangle Fill="{StaticResource Scanlines}" IsHitTestVisible="False" />
+            <!-- Grain d'ecran, purement decoratif : jamais dans le chemin des clics.
+                 Son opacite vient du theme, qui peut le faire disparaitre completement. -->
+            <Rectangle Fill="{StaticResource Scanlines}" IsHitTestVisible="False"
+                       Opacity="{DynamicResource GrainOpacity}" />
         </Grid>
     </Border>
 </Window>

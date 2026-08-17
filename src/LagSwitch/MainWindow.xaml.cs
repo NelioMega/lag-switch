@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using LagSwitch.Core;
+using LagSwitch.Core.Theming;
 using Microsoft.Win32;
 
 namespace LagSwitch;
@@ -63,6 +64,7 @@ public partial class MainWindow : Window
         _hotkeys.Released += () => Post(() => _cut.Release());
 
         _probe.Measured += sample => Post(() => RefreshProbe(sample));
+        ThemeService.Changed += OnThemeApplied;
         _targetWatch.Tick += (_, _) => _ = WatchTargetAsync();
 
         CutButton.PreviewMouseLeftButtonDown += OnCutButtonDown;
@@ -84,6 +86,7 @@ public partial class MainWindow : Window
             .GetName().Version?.ToString(3) ?? "1.0.0");
 
         LoadSettingsIntoUi();
+        BuildThemeButtons();
         _loading = false;
 
         ApplyHotkey();
@@ -134,6 +137,7 @@ public partial class MainWindow : Window
         _targetWatch.Stop();
         _probe.Dispose();
         _hotkeys.Dispose();
+        ThemeService.Changed -= OnThemeApplied;
 
         if (_overlay is not null)
         {
@@ -171,6 +175,80 @@ public partial class MainWindow : Window
         OverlayCheck.IsChecked = _settings.ShowOverlay;
         SoundCheck.IsChecked = _settings.PlaySounds;
         ProbeCheck.IsChecked = _settings.ProbeEnabled;
+    }
+
+    // -------------------------------------------------------------- themes
+
+    /// <summary>Une pastille de la couleur d'accent, puis le nom : on choisit a l'oeil.</summary>
+    private void BuildThemeButtons()
+    {
+        ThemeButtons.Children.Clear();
+
+        foreach (var theme in ThemeCatalog.All)
+        {
+            var swatch = new System.Windows.Shapes.Rectangle
+            {
+                Width = 9,
+                Height = 9,
+                Fill = new SolidColorBrush(theme.Accent),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 7, 0),
+            };
+
+            var label = new TextBlock { Text = theme.Name.ToUpperInvariant(), VerticalAlignment = VerticalAlignment.Center };
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(swatch);
+            row.Children.Add(label);
+
+            var button = new Button
+            {
+                Content = row,
+                Tag = theme.Name,
+                Padding = new Thickness(9, 5, 9, 5),
+                FontSize = 11,
+                Margin = new Thickness(0, 0, 8, 8),
+            };
+            button.Click += OnThemeChosen;
+
+            ThemeButtons.Children.Add(button);
+        }
+
+        RefreshThemeButtons();
+    }
+
+    /// <summary>Le theme actif porte le style accentue, les autres le style neutre.</summary>
+    private void RefreshThemeButtons()
+    {
+        foreach (var child in ThemeButtons.Children)
+        {
+            if (child is not Button button) continue;
+            var active = string.Equals((string?)button.Tag, ThemeService.Current.Name, StringComparison.OrdinalIgnoreCase);
+            button.Style = (Style)FindResource(active ? "PrimaryButton" : "BaseButton");
+        }
+
+        ThemeTagline.Text = $"{ThemeService.Current.Name} — {ThemeService.Current.Tagline}";
+    }
+
+    private void OnThemeChosen(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string name }) return;
+        if (string.Equals(name, _settings.ThemeName, StringComparison.OrdinalIgnoreCase)) return;
+
+        _settings.ThemeName = name;
+        ThemeService.Apply(name);
+        Append($"Theme : {name}.");
+    }
+
+    /// <summary>
+    /// Le service mute la couleur des pinceaux partages, donc presque tout suit tout seul.
+    /// Restent les valeurs qui ont ete COPIEES et non referencees : la couleur de la lueur.
+    /// </summary>
+    private void OnThemeApplied(Theme theme)
+    {
+        RefreshThemeButtons();
+        RefreshBlockAvailability();
+        if (_probe.Last is { } sample) RefreshProbe(sample);
     }
 
     private async void OnBackendChanged(object sender, RoutedEventArgs e)

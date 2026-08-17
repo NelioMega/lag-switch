@@ -52,6 +52,25 @@ vit dans un dossier `version-<hash>` qui change à chaque mise à jour, et une r
 l'ancien chemin resterait en place sans plus rien bloquer. Le chemin est re-résolu à
 l'armement et surveillé toutes les 3 secondes.
 
+## Les thèmes
+
+Six palettes complètes, appliquées sans redémarrer :
+
+| | |
+|---|---|
+| **Terminal** | noir, ardoise et rouge d'alerte — la palette du logo, par défaut |
+| **Ambre** | un moniteur monochrome ambre des années 80 |
+| **Phosphore** | le vert des tubes cathodiques, rien d'autre |
+| **Néon** | violet profond, cyan et magenta |
+| **Nord** | bleu-gris froid, désaturé, reposant |
+| **Papier** | clair, pour travailler en plein jour |
+
+Chaque thème n'écrit que **douze couleurs**. Les fonds de boutons, les bordures teintées et
+les états de survol sont *calculés* par mélange avec le fond — c'est ce qui permet à une
+palette claire de rester cohérente sans redécliner trente valeurs à la main, et ce qui garantit
+qu'un thème ajouté plus tard n'aura pas d'angle mort. L'opacité du grain d'écran fait aussi
+partie du thème : à 1 sur les palettes cathodiques, à 0,25 sur Papier.
+
 ## Le retour en jeu
 
 Une pastille toujours au-dessus affiche l'état sans quitter le plein écran — elle n'accepte ni
@@ -151,6 +170,13 @@ maintien, un fil interroge `GetAsyncKeyState` toutes les 10 ms jusqu'au relâche
 
 **Les réglages sont locaux.** `%AppData%\LagSwitch\settings.json`. Pas de compte, pas de serveur.
 
+**Les pinceaux sont créés en C#, jamais remplacés.** Un `SolidColorBrush` déclaré en XAML dans
+un dictionnaire de ressources est gelé par WPF : impossible à repeindre. Et un pinceau qu'on
+*remplacerait* laisserait derrière lui toutes les couleurs déjà posées depuis le code-behind.
+`Theming/ThemeService.cs` crée donc les pinceaux lui-même et se contente de muter leur `Color` :
+l'interface entière suit dans la même frame, y compris ce que le code a affecté à la main. Seule
+la lueur de l'état doit être refaite — elle *copie* une couleur au lieu de la référencer.
+
 **L'interface est un terminal.** Tout est en chasse fixe, les cases à cocher sont dessinées en
 ASCII (`[ ]` / `[x]`), la barre de titre est redessinée via `WindowChrome`, et un très léger
 grain de balayage passe par-dessus. La palette sort du logo : noir, gris ardoise, rouge d'alerte
@@ -166,6 +192,9 @@ du texte mangé dans la release, sans la moindre erreur de compilation.
 ```
 src/LagSwitch/
 ├── Core/
+│   ├── Theming/
+│   │   ├── Theme.cs        les six palettes, douze couleurs chacune
+│   │   └── ThemeService.cs dérivation des teintes et application à chaud
 │   ├── Wfp/
 │   │   ├── WfpNative.cs    interop WFP : structures, unions, GUID de couches
 │   │   ├── WfpEngine.cs    session dynamique, sous-calque, filtres de blocage

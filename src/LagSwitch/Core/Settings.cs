@@ -76,6 +76,9 @@ public sealed class Settings
 
     public bool PlaySounds { get; set; } = true;
 
+    /// <summary>Nom du theme applique. Voir <c>Core/Theming/ThemeCatalog</c>.</summary>
+    public string ThemeName { get; set; } = "Terminal";
+
     /// <summary>Code de touche virtuelle du raccourci. F8 par defaut.</summary>
     public uint HotkeyVirtualKey { get; set; } = 0x77;
 
